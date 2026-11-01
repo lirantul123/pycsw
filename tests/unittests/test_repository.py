@@ -75,6 +75,8 @@ def multiprofile_repo(tmp_path):
     repository.setup(database, 'records')
 
     context = StaticContext()
+    for tname in ('foo:RecordA', 'foo:RecordB'):
+        context.model['typenames'][tname] = {'queryables': {}, 'outputschema': ''}
     repo = repository.Repository(database, context, table='records')
 
     fixtures = [

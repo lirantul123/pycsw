@@ -423,12 +423,7 @@ class Repository(object):
         return self._get_repo_filter(query).all()
 
     def scoped_queryables(self, typenames=None):
-        ''' Return queryables dict scoped to the requested typenames.
-
-        Reads column mappings directly from the context model per typename,
-        avoiding last-wins collisions in the flattened self.queryables dict.
-        Falls back to _all for generic/wildcard types.
-        '''
+        ''' Return queryables scoped to typenames, falling back to _all. '''
         _csw_generic = {'csw:Record', 'csw30:Record'}
         if isinstance(typenames, str):
             typenames = typenames.split()
@@ -457,9 +452,11 @@ class Repository(object):
             LOGGER.debug('No constraint detected')
             query = self.session.query(self.dataset)
 
-        # filter by typename when specific typenames requested
         _csw_generic = {'csw:Record', 'csw30:Record'}
-        if typenames and not any(t in _csw_generic for t in typenames):
+        _profile_typenames = set(self.context.model.get('typenames', {}).keys()) - _csw_generic
+        if (typenames and
+                not any(t in _csw_generic for t in typenames) and
+                len(_profile_typenames) > 1):
             typename_col = self.context.md_core_model['mappings']['pycsw:Typename']
             query = query.filter(
                 getattr(self.dataset, typename_col).in_(typenames)
